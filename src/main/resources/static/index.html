@@ -1,10 +1,20 @@
 <html lang="en">
-    <head>
+    <head ng-app="app">
         <title>Game of Three</title>
     </head>
     <body>
-        <h4>Game of Three</h4>
+    <div>
+        <h1>Game of Three</h1>
+        <div>
+            <ul>
+                <li ng-repeat="p in players">
+                    <span ng-bind="p"></span>
+                </li>
+            </ul>
+        </div>
+    </div>
     </body>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.7.8/angular.js"></script>
     <script src="index.js"></script>
 </html>
