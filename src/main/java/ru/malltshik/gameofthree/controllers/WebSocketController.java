@@ -2,37 +2,37 @@ package ru.malltshik.gameofthree.controllers;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.messaging.handler.annotation.DestinationVariable;
+import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
-import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.messaging.simp.annotation.SendToUser;
-import org.springframework.messaging.simp.user.SimpUserRegistry;
 import org.springframework.stereotype.Controller;
+import ru.malltshik.gameofthree.controllers.transfer.MoveRequest;
 import ru.malltshik.gameofthree.services.GameService;
-
-import java.security.Principal;
 
 @Slf4j
 @Controller
 @RequiredArgsConstructor
 public class WebSocketController {
 
-    private final SimpMessageSendingOperations messagingTemplate;
     private final GameService gameService;
 
-    @MessageMapping("/message")
-    @SendToUser("/queue/reply")
-    public String processMessageFromClient(@Payload Integer number, SimpMessageHeaderAccessor headerAccessor) throws Exception {
-        headerAccessor.getSessionId();
-        return null;
+    @MessageMapping("/start")
+    public void startGame(@Payload String opponent, @Header("simpSessionId") String sessionId) {
+        gameService.startGame(sessionId, opponent);
     }
 
-    @MessageMapping("/challenge")
-    @SendToUser("/queue/reply")
-    public String processChallengeFromClient(@Payload String sessionId) throws Exception {
-        return "Not allowed";
+    @MessageMapping("/leave")
+    public void startGame(@Header("simpSessionId") String sessionId) {
+        gameService.leaveGame(sessionId);
+    }
+
+    @MessageMapping("/game/{key}")
+    public void move(@DestinationVariable Integer key, @Payload Integer request, @Header("simpSessionId") String sessionId) {
+        gameService.move(key, sessionId, request);
     }
 
     @MessageExceptionHandler

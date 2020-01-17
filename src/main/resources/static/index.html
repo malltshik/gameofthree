@@ -1,20 +1,69 @@
-<html lang="en">
-    <head ng-app="app">
-        <title>Game of Three</title>
-    </head>
-    <body>
-    <div>
-        <h1>Game of Three</h1>
-        <div>
-            <ul>
-                <li ng-repeat="p in players">
-                    <span ng-bind="p"></span>
-                </li>
-            </ul>
+<html lang="en" ng-app="app">
+<head>
+    <title>Game of Three</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+<section class="jumbotron text-center">
+    <div class="container">
+        <h1 class="jumbotron-heading">Game of Three</h1>
+    </div>
+</section>
+<div ng-if="user.status == 0" ng-controller="HubCtrl as h">
+    <div class="container">
+        <div class="text-center" ng-if="!players.length">
+            <div class="spinner-grow text-info" style="width: 5rem; height: 5rem;" role="status">
+                <span class="sr-only">Loading...</span>
+            </div>
+        </div>
+        <div ng-if="players.length">
+            <h4 class="text-center">Select opponent to play</h4>
+            <div class="list-group">
+                <button class="list-group-item cursor-pointer"
+                        ng-class="{'disabled': p == user.id}"
+                        ng-click="h.selectOpponent(p)"
+                        ng-repeat="p in players">
+                    {{p}}
+                    <span ng-if="p == user.id"> (you)</span>
+                    <span ng-if="opponents.includes(p)"> (enemy)</span>
+                </button>
+            </div>
         </div>
     </div>
-    </body>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.7.8/angular.js"></script>
-    <script src="index.js"></script>
+</div>
+<div ng-controller="GameCtrl as g" class="modal fade" id="gameModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <p class="text-center">{{game.player1}}</p>
+                <p class="text-center">VS</p>
+                <p class="text-center">{{game.player2}}</p>
+            </div>
+            <div class="modal-body">
+                <div class="waiting-opponent">
+                    <div class="text-center">
+                        <p>Waiting for the opponent...</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="spinner-grow text-info" style="width: 3rem; height: 3rem;" role="status">
+                            <span class="sr-only">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" ng-click="g.leave()">Leave game</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.7.8/angular.js"></script>
+<script src="index.js"></script>
 </html>
