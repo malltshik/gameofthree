@@ -17,31 +17,40 @@
                 <span class="sr-only">Loading...</span>
             </div>
         </div>
+        <div ng-if="hasInvites()">
+            <h4 class="text-center">Open challenges</h4>
+            <div class="list-group">
+                <button class="list-group-item cursor-pointer"
+                        ng-repeat="(k, i) in invites"
+                        ng-click="h.acceptChallenge(i)">
+                    {{k}} from {{i.player1}}
+                </button>
+            </div>
+        </div>
         <div ng-if="players.length">
-            <h4 class="text-center">Select opponent to play</h4>
+            <h4 class="text-center">Available opponents</h4>
             <div class="list-group">
                 <button class="list-group-item cursor-pointer"
                         ng-class="{'disabled': p == user.id}"
-                        ng-click="h.selectOpponent(p)"
+                        ng-click="h.openChallenge(p)"
                         ng-repeat="p in players">
                     {{p}}
                     <span ng-if="p == user.id"> (you)</span>
-                    <span ng-if="opponents.includes(p)"> (enemy)</span>
                 </button>
             </div>
         </div>
     </div>
 </div>
 <div ng-controller="GameCtrl as g" class="modal fade" id="gameModal" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
         <div class="modal-content">
-            <div class="modal-header">
-                <p class="text-center">{{game.player1}}</p>
+            <div class="modal-header" ng-if="game.accepted">
+                <p class="text-center" ng-class="{'active-turn': isActiveMove(game.player1)}">{{game.player1}}</p>
                 <p class="text-center">VS</p>
-                <p class="text-center">{{game.player2}}</p>
+                <p class="text-center" ng-class="{'active-turn': isActiveMove(game.player2)}">{{game.player2}}</p>
             </div>
             <div class="modal-body">
-                <div class="waiting-opponent">
+                <div class="waiting-opponent" ng-if="!game.accepted">
                     <div class="text-center">
                         <p>Waiting for the opponent...</p>
                     </div>
@@ -51,9 +60,57 @@
                         </div>
                     </div>
                 </div>
+                <div class="game-field" ng-if="game.accepted">
+                    <div class="moves">
+                        <div class="alert alert-secondary" role="alert">
+                            There is the rules!<br>
+                            You've got a number. Choose which step your prefer (-1, 0, +1)<br>
+                            Then this number will be modified with your step and divided by 3 <br>
+                            Then turn moves to your opponent. <br>
+                            Win those who reach 1 as a result after division! <br>
+                            Let's Mortal Kombat begin! <br>
+                            <p class="active-turn">{{game.player1}} is first</p>
+                        </div>
+                        <div class="alert alert-secondary" role="alert">
+                            Current number is: {{game.number}}
+                        </div>
+                        <div id="move-{{$index}}" ng-repeat="move in game.moves" ng-class=""
+                             class="alert alert-{{($index + 1) % 2 == 0 ? 'primary' : 'info'}}" role="alert">
+                            {{move.author}} move is {{move.move}} <br>
+                            Number changing is: ({{move.prev}} + ({{move.move}})) / 3 = {{move.current}}
+                        </div>
+                    </div>
+                    <div class="moves-btn" ng-if="!game.winner">
+                        <div class="btn-group" role="group" ng-if="!autoplay">
+                            <button type="button" ng-disabled="!hasMove()" ng-click="move(-1)"
+                                    class="btn btn-secondary">-1</button>
+                            <button type="button" ng-disabled="!hasMove()" ng-click="move(0)"
+                                    class="btn btn-secondary">0</button>
+                            <button type="button" ng-disabled="!hasMove()" ng-click="move(1)"
+                                    class="btn btn-secondary">+1</button>
+                        </div>
+                        <p></p>
+                        <button type="button" ng-click="autoplayToggle()"
+                                class="btn btn-{{autoplay ? 'warning' : 'success'}} autoplay-btn">
+                            Autoplay
+                        </button>
+                    </div>
+                    <p></p>
+                    <div ng-if="error" class="alert alert-warning" role="alert">
+                        {{error}}
+                    </div>
+                    <div ng-if="game.winner">
+                        <div class="alert alert-success" role="alert">
+                            {{game.winner}} won!
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" ng-click="g.leave()">Leave game</button>
+                <button type="button" class="btn btn-secondary" ng-show="openedChallenge"
+                        ng-click="closeChallenge()">Close challenge</button>
+                <button type="button" class="btn btn-secondary" ng-show="game"
+                        ng-click="leaveGame()">Leave game</button>
             </div>
         </div>
     </div>

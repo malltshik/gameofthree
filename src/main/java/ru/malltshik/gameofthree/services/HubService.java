@@ -10,6 +10,7 @@ import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 import org.springframework.web.socket.messaging.SessionSubscribeEvent;
 import org.springframework.web.socket.messaging.SessionUnsubscribeEvent;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -52,13 +53,13 @@ public class HubService {
         messaging.convertAndSend(HUB_DESTINATION, PLAYERS);
     }
 
-    public void leave(String sessionId) {
-        PLAYERS.remove(sessionId);
+    public void leave(String... sessionId) {
+        PLAYERS.removeAll(Arrays.asList(sessionId));
         messaging.convertAndSend(HUB_DESTINATION, PLAYERS);
     }
 
-    public void join(String sessionId) {
-        PLAYERS.add(sessionId);
+    public void join(String... sessionId) {
+        PLAYERS.addAll(Arrays.asList(sessionId));
         messaging.convertAndSend(HUB_DESTINATION, PLAYERS);
     }
 
