@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.*;
 import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.stereotype.Controller;
-import ru.malltshik.gameofthree.entities.Game;
 import ru.malltshik.gameofthree.services.GameService;
 
 @Slf4j

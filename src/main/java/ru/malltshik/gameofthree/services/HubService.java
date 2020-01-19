@@ -9,11 +9,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 import org.springframework.web.socket.messaging.SessionSubscribeEvent;
 import org.springframework.web.socket.messaging.SessionUnsubscribeEvent;
+import ru.malltshik.gameofthree.repositories.HubRepository;
 
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Objects;
-import java.util.Set;
 
 @Slf4j
 @Component
@@ -21,17 +20,17 @@ import java.util.Set;
 public class HubService {
 
     private final static String HUB_DESTINATION = "/topic/hub";
-    private final static Set<String> PLAYERS = new HashSet<>();
 
     private final SimpMessageSendingOperations messaging;
+    private final HubRepository hubRepository;
 
     @EventListener
     public void join(SessionSubscribeEvent event) {
         log.debug("SessionSubscribeEvent:  {}", event);
         StompHeaderAccessor headers = StompHeaderAccessor.wrap(event.getMessage());
         if (Objects.equals(headers.getDestination(), HUB_DESTINATION)) {
-            PLAYERS.add(headers.getSessionId());
-            messaging.convertAndSend(HUB_DESTINATION, PLAYERS);
+            hubRepository.add(headers.getSessionId());
+            messaging.convertAndSend(HUB_DESTINATION, hubRepository.getAll());
         }
     }
 
@@ -40,8 +39,8 @@ public class HubService {
         log.debug("SessionUnsubscribeEvent:  {}", event);
         StompHeaderAccessor headers = StompHeaderAccessor.wrap(event.getMessage());
         if (Objects.equals(headers.getDestination(), HUB_DESTINATION)) {
-            PLAYERS.remove(headers.getSessionId());
-            messaging.convertAndSend(HUB_DESTINATION, PLAYERS);
+            hubRepository.remove(headers.getSessionId());
+            messaging.convertAndSend(HUB_DESTINATION, hubRepository.getAll());
         }
     }
 
@@ -49,18 +48,18 @@ public class HubService {
     public void leave(SessionDisconnectEvent event) {
         log.debug("SessionDisconnectEvent:  {}", event);
         StompHeaderAccessor headers = StompHeaderAccessor.wrap(event.getMessage());
-        PLAYERS.remove(headers.getSessionId());
-        messaging.convertAndSend(HUB_DESTINATION, PLAYERS);
+        hubRepository.remove(headers.getSessionId());
+        messaging.convertAndSend(HUB_DESTINATION, hubRepository.getAll());
     }
 
     public void leave(String... sessionId) {
-        PLAYERS.removeAll(Arrays.asList(sessionId));
-        messaging.convertAndSend(HUB_DESTINATION, PLAYERS);
+        hubRepository.removeAll(Arrays.asList(sessionId));
+        messaging.convertAndSend(HUB_DESTINATION, hubRepository.getAll());
     }
 
     public void join(String... sessionId) {
-        PLAYERS.addAll(Arrays.asList(sessionId));
-        messaging.convertAndSend(HUB_DESTINATION, PLAYERS);
+        hubRepository.addAll(Arrays.asList(sessionId));
+        messaging.convertAndSend(HUB_DESTINATION, hubRepository.getAll());
     }
 
 }

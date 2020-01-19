@@ -83,11 +83,14 @@
                     <div class="moves-btn" ng-if="!game.winner">
                         <div class="btn-group" role="group" ng-if="!autoplay">
                             <button type="button" ng-disabled="!hasMove()" ng-click="move(-1)"
-                                    class="btn btn-secondary">-1</button>
+                                    class="btn btn-secondary">-1
+                            </button>
                             <button type="button" ng-disabled="!hasMove()" ng-click="move(0)"
-                                    class="btn btn-secondary">0</button>
+                                    class="btn btn-secondary">0
+                            </button>
                             <button type="button" ng-disabled="!hasMove()" ng-click="move(1)"
-                                    class="btn btn-secondary">+1</button>
+                                    class="btn btn-secondary">+1
+                            </button>
                         </div>
                         <p></p>
                         <button type="button" ng-click="autoplayToggle()"
@@ -108,9 +111,11 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" ng-show="openedChallenge"
-                        ng-click="closeChallenge()">Close challenge</button>
+                        ng-click="closeChallenge()">Close challenge
+                </button>
                 <button type="button" class="btn btn-secondary" ng-show="game"
-                        ng-click="leaveGame()">Leave game</button>
+                        ng-click="leaveGame()">Leave game
+                </button>
             </div>
         </div>
     </div>

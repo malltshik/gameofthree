@@ -8,12 +8,15 @@ import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.messaging.simp.SimpMessageType;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.stereotype.Component;
+import org.springframework.web.socket.messaging.AbstractSubProtocolEvent;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
+import org.springframework.web.socket.messaging.SessionUnsubscribeEvent;
 import ru.malltshik.gameofthree.entities.Game;
 import ru.malltshik.gameofthree.entities.Move;
+import ru.malltshik.gameofthree.repositories.GameRepository;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 
 @Slf4j
@@ -21,49 +24,26 @@ import java.util.Random;
 @RequiredArgsConstructor
 public class GameService {
 
-    private final static HashMap<Integer, Game> GAMES = new HashMap<>();
-
     private final SimpMessageSendingOperations messaging;
     private final HubService hubService;
+    private final GameRepository gameRepository;
 
     public void openChallenge(String initiator, String opponent) {
         Game game = new Game(initiator, opponent, null, getRandom(), false);
         messaging.convertAndSendToUser(initiator, "/queue/game", game, getHeaders(initiator));
         messaging.convertAndSendToUser(opponent, "/queue/game", game, getHeaders(opponent));
-        GAMES.put(game.getId(), game);
+        gameRepository.save(game);
         hubService.leave(initiator);
     }
 
     public void closeChallenge(String initiator, Game game) {
         messaging.convertAndSendToUser(game.getPlayer2(), "/queue/challengeClosed", game, getHeaders(game.getPlayer2()));
-        GAMES.remove(game.getId(), game);
+        gameRepository.remove(game);
         hubService.join(initiator);
     }
 
-    @EventListener
-    public void leaveGame(SessionDisconnectEvent event) {
-        StompHeaderAccessor headers = StompHeaderAccessor.wrap(event.getMessage());
-        String sessionId = headers.getSessionId();
-        GAMES.entrySet().removeIf(e -> {
-            Game game = e.getValue();
-            String alone = null;
-            if (game.getPlayer1().equals(sessionId)) {
-                alone = game.getPlayer2();
-            }
-            if (game.getPlayer2().equals(sessionId)) {
-                alone = game.getPlayer1();
-            }
-            if (alone != null) {
-                messaging.convertAndSendToUser(alone, "/queue/opponentLeft", game, getHeaders(alone));
-                return true;
-            } else {
-                return false;
-            }
-        });
-    }
-
     public void acceptChallenge(String sessionId, Game g) {
-        Game game = GAMES.get(g.getId());
+        Game game = gameRepository.getOne(g.getId());
         game.setAccepted(true);
         messaging.convertAndSendToUser(sessionId, "/queue/game", game, getHeaders(sessionId));
         messaging.convertAndSendToUser(game.getPlayer1(), "/queue/game", game, getHeaders(game.getPlayer1()));
@@ -71,7 +51,7 @@ public class GameService {
     }
 
     public void move(Integer gameId, String player, Integer move) {
-        Game game = GAMES.get(gameId);
+        Game game = gameRepository.getOne(gameId);
         if (game == null) {
             throw new RuntimeException("Game not found!");
         }
@@ -90,13 +70,40 @@ public class GameService {
         int result = (prev + move) / 3;
         if (result == 1) {
             game.setWinner(player);
-            GAMES.remove(gameId);
+            gameRepository.remove(game);
             hubService.join(game.getPlayer1(), game.getPlayer2());
         }
         game.getMoves().add(new Move(player, move, prev, result));
         String destination = String.format("/queue/game/%s/moves", game.getId());
         messaging.convertAndSendToUser(game.getPlayer1(), destination, game, getHeaders(game.getPlayer1()));
         messaging.convertAndSendToUser(game.getPlayer2(), destination, game, getHeaders(game.getPlayer2()));
+    }
+
+    @EventListener
+    public void leaveGame(SessionDisconnectEvent event) {
+        notifyAlonePlayer(event, false);
+    }
+
+    @EventListener
+    public void leaveGame(SessionUnsubscribeEvent event) {
+        notifyAlonePlayer(event, true);
+    }
+
+    private void notifyAlonePlayer(AbstractSubProtocolEvent event, boolean manual) {
+        StompHeaderAccessor headers = StompHeaderAccessor.wrap(event.getMessage());
+        String sessionId = headers.getSessionId();
+        Optional.ofNullable(gameRepository.removeByPlayer(sessionId)).ifPresent(g -> {
+            if (g.getPlayer1().equals(sessionId)) {
+                messaging.convertAndSendToUser(g.getPlayer2(), "/queue/opponentLeft", g, getHeaders(g.getPlayer2()));
+                hubService.join(g.getPlayer2());
+            } else {
+                messaging.convertAndSendToUser(g.getPlayer1(), "/queue/opponentLeft", g, getHeaders(g.getPlayer1()));
+                hubService.join(g.getPlayer1());
+            }
+            if (manual) {
+                hubService.join(sessionId);
+            }
+        });
     }
 
     private Map<String, Object> getHeaders(String sessionId) {

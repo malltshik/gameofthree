@@ -10,7 +10,7 @@ body {
     width: 100%;
 }
 
-.moves-btn .disabled button{
+.moves-btn .disabled button {
     disabled: true;
 }
 
