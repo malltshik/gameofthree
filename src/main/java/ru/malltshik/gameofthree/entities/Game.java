@@ -13,6 +13,7 @@ import java.util.Objects;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Game {
 
+    private final LinkedList<Move> moves = new LinkedList<>();
     @EqualsAndHashCode.Include
     private String player1;
     @EqualsAndHashCode.Include
@@ -20,7 +21,6 @@ public class Game {
     private String winner;
     private Integer number;
     private boolean accepted;
-    private final LinkedList<Move> moves = new LinkedList<>();
 
     @JsonProperty("id")
     public int getId() {

@@ -29,21 +29,26 @@ public class GameService {
     private final GameRepository gameRepository;
 
     public void openChallenge(String initiator, String opponent) {
+        log.debug("Player {} going to open new challenge with {}", initiator, opponent);
         Game game = new Game(initiator, opponent, null, getRandom(), false);
         messaging.convertAndSendToUser(initiator, "/queue/game", game, getHeaders(initiator));
         messaging.convertAndSendToUser(opponent, "/queue/game", game, getHeaders(opponent));
         gameRepository.save(game);
         hubService.leave(initiator);
+        log.debug("Player {} has opened new challenge with {}. Game: {}", initiator, opponent, game);
     }
 
     public void closeChallenge(String initiator, Game game) {
+        log.debug("Player {} decided to close challenge: {}", initiator, game);
         messaging.convertAndSendToUser(game.getPlayer2(), "/queue/challengeClosed", game, getHeaders(game.getPlayer2()));
         gameRepository.remove(game);
         hubService.join(initiator);
+        log.debug("Challenge {} has been closed", game);
     }
 
-    public void acceptChallenge(String sessionId, Game g) {
-        Game game = gameRepository.getOne(g.getId());
+    public void acceptChallenge(String sessionId, Game game) {
+        log.debug("Player {} decided to apply challenge: {}", sessionId, game);
+        game = gameRepository.getOne(game.getId());
         game.setAccepted(true);
         messaging.convertAndSendToUser(sessionId, "/queue/game", game, getHeaders(sessionId));
         messaging.convertAndSendToUser(game.getPlayer1(), "/queue/game", game, getHeaders(game.getPlayer1()));
@@ -55,6 +60,7 @@ public class GameService {
         if (game == null) {
             throw new RuntimeException("Game not found!");
         }
+        log.debug("New move {} in game {} by {}", move, game, player);
         if (!game.getCurrentPlayer().equals(player)) {
             throw new RuntimeException("Not your turn!");
         }
@@ -77,6 +83,7 @@ public class GameService {
         String destination = String.format("/queue/game/%s/moves", game.getId());
         messaging.convertAndSendToUser(game.getPlayer1(), destination, game, getHeaders(game.getPlayer1()));
         messaging.convertAndSendToUser(game.getPlayer2(), destination, game, getHeaders(game.getPlayer2()));
+        log.debug("Game state after move: {}", game);
     }
 
     @EventListener
